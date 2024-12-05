@@ -1,7 +1,8 @@
-from DataBase import Neo4jDatabase
-from User import User
-from Activity import Activity
+from ..packageClass.Activity import Neo4jDatabase
+from ..packageClass.Activity import User
+from ..packageClass.Activity import Activity
 from datetime import datetime
+
 
 # 示例用法
 if __name__ == "__main__":

@@ -274,17 +274,18 @@ if __name__ == "__main__":
     db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="kkykkykky")
 
     # 读取用户节点
+    
     user_data = db.read_user_node(user_id="12345")
-    print("User Data:", user_data)
+    print(user_data[1]["name"])
+
 
     # 读取活动节点
     activity_data = db.read_activity_node(activity_id="AI Work")
-    print("Activity Data:", activity_data)
+    # print("Activity Data:", activity_data)
 
     # 根据活动标题读取活动节点
     activities_by_title = db.read_nodes_by_property(node_type="Activity", property_name="title",
                                                     value="Test update")
-    print("Activities found by title:", activities_by_title)
+    # print("Activities found by title:", activities_by_title)
 
     db.close()
-    print("Operations completed.")
