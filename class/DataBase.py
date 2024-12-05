@@ -71,19 +71,78 @@ class Neo4jDatabase:
                updated_at=activity.updated_at,
                img_url=activity.img_url)
 
-    def create_participation_relationship(self, user: User, activity: Activity):
-        """创建用户与活动之间的参与关系"""
+    def create_participation_relationship(self, user: User, activity: Activity, rating: int, comments: str):
+        """创建用户与活动之间的参与关系，并添加评分和评论"""
         with self.driver.session() as session:
-            session.write_transaction(self._create_participation, user, activity)
+            session.write_transaction(self._create_participation, user, activity, rating, comments)
 
     @staticmethod
-    def _create_participation(tx, user: User, activity: Activity):
-        """创建用户和活动之间的参与关系"""
+    def _create_participation(tx, user: User, activity: Activity, rating: int, comments: str):
+        """创建用户和活动之间的参与关系并添加评分和评论"""
         query = (
             "MATCH (u:User {user_id: $user_id}), (a:Activity {activity_id: $activity_id}) "
-            "CREATE (u)-[:PARTICIPATED_IN]->(a)"
+            "CREATE (u)-[r:PARTICIPATED_IN {rating: $rating, comments: $comments}]->(a)"
         )
-        tx.run(query, user_id=user.user_id, activity_id=activity.activity_id)
+        tx.run(query, 
+               user_id=user.user_id, 
+               activity_id=activity.activity_id, 
+               rating=rating, 
+               comments=comments)
+
+    # 创建用户对活动感兴趣的关系
+    def create_interested_in_relationship(self, user: User, activity: Activity, interest_level: str):
+        """用户对某个活动表示感兴趣"""
+        with self.driver.session() as session:
+            session.write_transaction(self._create_interested_in, user, activity, interest_level)
+
+    @staticmethod
+    def _create_interested_in(tx, user: User, activity: Activity, interest_level: str):
+        """创建用户对活动感兴趣的关系"""
+        query = (
+            "MATCH (u:User {user_id: $user_id}), (a:Activity {activity_id: $activity_id}) "
+            "CREATE (u)-[r:INTERESTED_IN {interest_level: $interest_level}]->(a)"
+        )
+        tx.run(query, 
+               user_id=user.user_id, 
+               activity_id=activity.activity_id, 
+               interest_level=interest_level)
+
+    # 创建用户是活动主办方的关系
+    def create_organizes_relationship(self, user: User, activity: Activity, organization_role: str):
+        """用户是活动的组织者或主办方"""
+        with self.driver.session() as session:
+            session.write_transaction(self._create_organizes, user, activity, organization_role)
+
+    @staticmethod
+    def _create_organizes(tx, user: User, activity: Activity, organization_role: str):
+        """创建用户是活动组织者的关系"""
+        query = (
+            "MATCH (u:User {user_id: $user_id}), (a:Activity {activity_id: $activity_id}) "
+            "CREATE (u)-[r:ORGANIZES {organization_role: $organization_role}]->(a)"
+        )
+        tx.run(query, 
+               user_id=user.user_id, 
+               activity_id=activity.activity_id, 
+               organization_role=organization_role)
+
+    # 创建用户是活动工作人员的关系
+    def create_acted_in_relationship(self, user: User, activity: Activity, organization_role: str):
+        """用户是活动的工作人员"""
+        with self.driver.session() as session:
+            session.write_transaction(self._create_acted_in, user, activity, organization_role)
+
+    @staticmethod
+    def _create_acted_in(tx, user: User, activity: Activity, organization_role: str):
+        """创建用户是活动工作人员的关系"""
+        query = (
+            "MATCH (u:User {user_id: $user_id}), (a:Activity {activity_id: $activity_id}) "
+            "CREATE (u)-[r:ACTED_IN {organization_role: $organization_role}]->(a)"
+        )
+        tx.run(query, 
+               user_id=user.user_id, 
+               activity_id=activity.activity_id, 
+               organization_role=organization_role)
+
 
 # 示例用法
 if __name__ == "__main__":
@@ -103,7 +162,7 @@ if __name__ == "__main__":
 
     # 创建Activity对象
     activity = Activity(
-        activity_id="activity_001",
+        activity_id="AI Work",
         title="AI Workshop",
         description="A workshop on AI and machine learning.",
         sponsor="TechClub",
@@ -119,7 +178,15 @@ if __name__ == "__main__":
     )
 
     # 连接到Neo4j数据库并创建节点
-    db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="kkykkykky")
+    db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="szdxwllyk1585")
+    
+    rating = 4  # 例如，用户给活动评分 4
+    comments = "The workshop was very insightful and informative."  # 用户的评论
+
+    # 创建兴趣程度、组织角色等属性
+    interest_level = "High"  # 用户对活动的兴趣程度
+    organization_role_org = "Organizer"  # 用户在活动中的角色（作为主办方）
+    organization_role_act = "Host"  # 用户在活动中的角色（作为工作人员）
     
     # 创建用户节点
     db.create_user_node(user)
@@ -127,9 +194,16 @@ if __name__ == "__main__":
     # 创建活动节点
     db.create_activity_node(activity)
     
-    # 创建用户参与活动的关系
-    db.create_participation_relationship(user, activity)
+    # 创建用户参与活动的关系，并添加评分和评论
+    db.create_participation_relationship(user, activity, rating, comments)
+
+     # 创建用户对活动的兴趣关系
+    db.create_interested_in_relationship(user, activity, interest_level)
+    
+    # 创建用户作为活动主办方的关系
+    db.create_organizes_relationship(user, activity, organization_role_org)
+    
+    # 创建用户作为活动工作人员的关系
+    db.create_acted_in_relationship(user, activity, organization_role_act)
     
     db.close()
-
-    print("User and Activity nodes created in Neo4j and relationship established.")
