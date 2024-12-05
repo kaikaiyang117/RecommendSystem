@@ -218,30 +218,73 @@ class Neo4jDatabase:
         params = {"user_id": user_id, "activity_id": activity_id, **updated_property}
         tx.run(query, **params)
 
+# 读取用户节点的属性
+    def read_user_node(self, user_id: str):
+        """根据user_id读取用户节点的属性"""
+        with self.driver.session() as session:
+            result = session.read_transaction(self._read_user, user_id)
+            return result
+
+    @staticmethod
+    def _read_user(tx, user_id: str):
+        """查询用户节点的属性"""
+        query = """
+            MATCH (u:User {user_id: $user_id})
+            RETURN u
+        """
+        result = tx.run(query, user_id=user_id)
+        return [record["u"] for record in result]
+
+    # 读取活动节点的属性
+    def read_activity_node(self, activity_id: str):
+        """根据activity_id读取活动节点的属性"""
+        with self.driver.session() as session:
+            result = session.read_transaction(self._read_activity, activity_id)
+            return result
+
+    @staticmethod
+    def _read_activity(tx, activity_id: str):
+        """查询活动节点的属性"""
+        query = """
+            MATCH (a:Activity {activity_id: $activity_id})
+            RETURN a
+        """
+        result = tx.run(query, activity_id=activity_id)
+        return [record["a"] for record in result]
+
+    # 通过属性读取节点
+    def read_nodes_by_property(self, node_type: str, property_name: str, value: str):
+        """根据属性值查询节点"""
+        with self.driver.session() as session:
+            result = session.read_transaction(self._read_nodes_by_property, node_type, property_name, value)
+            return result
+
+    @staticmethod
+    def _read_nodes_by_property(tx, node_type: str, property_name: str, value: str):
+        """通过属性查询节点"""
+        query = f"""
+            MATCH (n:{node_type} {{{property_name}: $value}})
+            RETURN n
+        """
+        result = tx.run(query, value=value)
+        return [record["n"] for record in result]
+
+
 if __name__ == "__main__":
     db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="kkykkykky")
 
-    # 更新用户节点
-    updated_user_properties = {
-        "email": "alice_updated@example.com",  # 更新用户邮箱
-        "name": "Hude"  # 更新用户名
-    }
-    db.update_user_node(user_id="12345", updated_properties=updated_user_properties)
+    # 读取用户节点
+    user_data = db.read_user_node(user_id="12345")
+    print("User Data:", user_data)
 
-    # 更新活动节点
-    updated_activity_properties = {
-        "title": "Test update",  # 更新活动标题
-        "location": "Room 101, Main Building"  # 更新活动地点
-    }
-    db.update_activity_node(activity_id="AI Work", updated_properties=updated_activity_properties)
+    # 读取活动节点
+    activity_data = db.read_activity_node(activity_id="AI Work")
+    print("Activity Data:", activity_data)
 
-    # 更新用户与活动的参与关系属性
-    updated_relationship_properties = {
-        "rating": 4,  # 更新评分
-        "comments": "Very informative session!"  # 更新评论
-    }
-    db.update_relationship_property(user_id="12345", activity_id="AI Work", relationship_type="PARTICIPATED_IN",
-                                    updated_property=updated_relationship_properties)
+    # 根据活动标题读取活动节点
+    activities_by_title = db.read_nodes_by_property(node_type="Activity", property_name="title",
+                                                    value="Test update")
+    print("Activities found by title:", activities_by_title)
 
     db.close()
-    print("Activity node and relationship properties updated successfully.")
+    print("Operations completed.")
