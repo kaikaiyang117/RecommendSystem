@@ -10,7 +10,7 @@ Accept: application/json
 
 
 
+###
 
-
-Get http://127.0.0.1:8000/redirect/
+GET http://127.0.0.1:8000/item/
 Accept: application/json
