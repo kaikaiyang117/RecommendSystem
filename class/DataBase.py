@@ -71,6 +71,38 @@ class Neo4jDatabase:
                updated_at=activity.updated_at,
                img_url=activity.img_url)
 
+
+     # 更新User节点的属性
+    def update_user_node(self, user_id: str, updated_properties: dict):
+        """更新用户节点的属性"""
+        with self.driver.session() as session:
+            session.write_transaction(self._update_user, user_id, updated_properties)
+
+    @staticmethod
+    def _update_user(tx, user_id: str, updated_properties: dict):
+        """更新用户节点属性的Cypher查询"""
+        set_clause = ", ".join([f"u.{key} = ${key}" for key in updated_properties])
+        query = f"""
+            MATCH (u:User {user_id: $user_id})
+            SET {set_clause}
+        """
+        tx.run(query, user_id=user_id, **updated_properties)
+
+    def update_activity_node(self, activity_id: str, updated_properties: dict):
+        """更新活动节点的属性"""
+        with self.driver.session() as session:
+            session.write_transaction(self._update_activity, activity_id, updated_properties)
+
+    @staticmethod
+    def _update_activity(tx, activity_id: str, updated_properties: dict):
+        """更新活动节点属性的Cypher查询"""
+        set_clause = ", ".join([f"a.{key} = ${key}" for key in updated_properties])
+        query = f"""
+            MATCH (a:Activity {activity_id: $activity_id})
+            SET {set_clause}
+        """
+        tx.run(query, activity_id=activity_id, **updated_properties)
+
     def create_participation_relationship(self, user: User, activity: Activity, rating: int, comments: str):
         """创建用户与活动之间的参与关系，并添加评分和评论"""
         with self.driver.session() as session:
@@ -183,7 +215,7 @@ if __name__ == "__main__":
     rating = 4  # 例如，用户给活动评分 4
     comments = "The workshop was very insightful and informative."  # 用户的评论
 
-    # 创建兴趣程度、组织角色等属性
+
     interest_level = "High"  # 用户对活动的兴趣程度
     organization_role_org = "Organizer"  # 用户在活动中的角色（作为主办方）
     organization_role_act = "Host"  # 用户在活动中的角色（作为工作人员）
