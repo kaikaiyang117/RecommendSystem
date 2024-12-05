@@ -3,6 +3,8 @@ from User import User
 from Activity import Activity
 from datetime import datetime
 from typing import List
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 class Neo4jDatabase:
     def __init__(self, uri: str, username: str, password: str):
@@ -71,37 +73,6 @@ class Neo4jDatabase:
                updated_at=activity.updated_at,
                img_url=activity.img_url)
 
-
-     # 更新User节点的属性
-    def update_user_node(self, user_id: str, updated_properties: dict):
-        """更新用户节点的属性"""
-        with self.driver.session() as session:
-            session.write_transaction(self._update_user, user_id, updated_properties)
-
-    @staticmethod
-    def _update_user(tx, user_id: str, updated_properties: dict):
-        """更新用户节点属性的Cypher查询"""
-        set_clause = ", ".join([f"u.{key} = ${key}" for key in updated_properties])
-        query = f"""
-            MATCH (u:User {user_id: $user_id})
-            SET {set_clause}
-        """
-        tx.run(query, user_id=user_id, **updated_properties)
-
-    def update_activity_node(self, activity_id: str, updated_properties: dict):
-        """更新活动节点的属性"""
-        with self.driver.session() as session:
-            session.write_transaction(self._update_activity, activity_id, updated_properties)
-
-    @staticmethod
-    def _update_activity(tx, activity_id: str, updated_properties: dict):
-        """更新活动节点属性的Cypher查询"""
-        set_clause = ", ".join([f"a.{key} = ${key}" for key in updated_properties])
-        query = f"""
-            MATCH (a:Activity {activity_id: $activity_id})
-            SET {set_clause}
-        """
-        tx.run(query, activity_id=activity_id, **updated_properties)
 
     def create_participation_relationship(self, user: User, activity: Activity, rating: int, comments: str):
         """创建用户与活动之间的参与关系，并添加评分和评论"""
@@ -175,67 +146,102 @@ class Neo4jDatabase:
                activity_id=activity.activity_id, 
                organization_role=organization_role)
 
+    # 更新User节点的属性
+    def update_user_node(self, user_id: str, updated_properties: dict):
+        """更新用户节点的属性"""
+        with self.driver.session() as session:
+            session.write_transaction(self._update_user, user_id, updated_properties)
 
-# 示例用法
+    @staticmethod
+    def _update_user(tx, user_id: str, updated_properties: dict):
+        """更新用户节点属性的Cypher查询"""
+
+        # 构造SET子句
+        set_clause = ", ".join([f"u.{key} = ${key}" for key in updated_properties])
+
+        # 查询：根据user_id更新属性
+        query = f"""
+            MATCH (u:User {{user_id: $user_id}})
+            SET {set_clause}
+        """
+
+        # 执行查询时传递所有的参数
+        params = {"user_id": user_id, **updated_properties}
+        tx.run(query, **params)
+
+    # 更新Activity节点的属性
+    def update_activity_node(self, activity_id: str, updated_properties: dict):
+        """更新活动节点的属性"""
+        with self.driver.session() as session:
+            session.write_transaction(self._update_activity, activity_id, updated_properties)
+
+    @staticmethod
+    def _update_activity(tx, activity_id: str, updated_properties: dict):
+        """更新活动节点属性的Cypher查询"""
+
+        # 构造SET子句
+        set_clause = ", ".join([f"a.{key} = ${key}" for key in updated_properties])
+
+        # 查询：根据activity_id更新属性
+        query = f"""
+            MATCH (a:Activity {{activity_id: $activity_id}})
+            SET {set_clause}
+        """
+
+        # 执行查询时传递所有的参数
+        params = {"activity_id": activity_id, **updated_properties}
+        tx.run(query, **params)
+
+    # 更新用户与活动之间的关系属性
+    def update_relationship_property(self, user_id: str, activity_id: str, relationship_type: str,
+                                     updated_property: dict):
+        """更新用户与活动之间的关系属性"""
+        with self.driver.session() as session:
+            session.write_transaction(self._update_relationship_property, user_id, activity_id, relationship_type,
+                                      updated_property)
+
+    @staticmethod
+    def _update_relationship_property(tx, user_id: str, activity_id: str, relationship_type: str,
+                                      updated_property: dict):
+        """更新用户与活动之间关系的属性"""
+
+        # 构造SET子句
+        set_clause = ", ".join([f"r.{key} = ${key}" for key in updated_property])
+
+        # 查询：根据user_id和activity_id更新关系属性
+        query = f"""
+            MATCH (u:User {{user_id: $user_id}})-[r:{relationship_type}]->(a:Activity {{activity_id: $activity_id}})
+            SET {set_clause}
+        """
+
+        # 执行查询时传递所有的参数
+        params = {"user_id": user_id, "activity_id": activity_id, **updated_property}
+        tx.run(query, **params)
+
 if __name__ == "__main__":
-    # 创建User对象
-    user = User(
-        user_id="12345",
-        name="Alice",
-        email="alice@example.com",
-        major="Computer Science",
-        college="Engineering",
-        tags=["AI", "Robotics"],
-        participation_count=3,
-        joined_activities=["activity_1", "activity_2"],
-        created_at="2024-12-02",
-        updated_at="2024-12-02"
-    )
+    db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="kkykkykky")
 
-    # 创建Activity对象
-    activity = Activity(
-        activity_id="AI Work",
-        title="AI Workshop",
-        description="A workshop on AI and machine learning.",
-        sponsor="TechClub",
-        tags=["AI", "Machine Learning", "Workshop"],
-        date=datetime(2024, 12, 10, 10, 0),
-        location="Room 101, Engineering Building",
-        duration=120,
-        audience="Undergraduate students",
-        capacity=50,
-        current_participants=10,
-        organizer="Tech Club",
-        img_url="https://example.com/image.jpg"
-    )
+    # 更新用户节点
+    updated_user_properties = {
+        "email": "alice_updated@example.com",  # 更新用户邮箱
+        "name": "Hude"  # 更新用户名
+    }
+    db.update_user_node(user_id="12345", updated_properties=updated_user_properties)
 
-    # 连接到Neo4j数据库并创建节点
-    db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="szdxwllyk1585")
-    
-    rating = 4  # 例如，用户给活动评分 4
-    comments = "The workshop was very insightful and informative."  # 用户的评论
+    # 更新活动节点
+    updated_activity_properties = {
+        "title": "Test update",  # 更新活动标题
+        "location": "Room 101, Main Building"  # 更新活动地点
+    }
+    db.update_activity_node(activity_id="AI Work", updated_properties=updated_activity_properties)
 
+    # 更新用户与活动的参与关系属性
+    updated_relationship_properties = {
+        "rating": 4,  # 更新评分
+        "comments": "Very informative session!"  # 更新评论
+    }
+    db.update_relationship_property(user_id="12345", activity_id="AI Work", relationship_type="PARTICIPATED_IN",
+                                    updated_property=updated_relationship_properties)
 
-    interest_level = "High"  # 用户对活动的兴趣程度
-    organization_role_org = "Organizer"  # 用户在活动中的角色（作为主办方）
-    organization_role_act = "Host"  # 用户在活动中的角色（作为工作人员）
-    
-    # 创建用户节点
-    db.create_user_node(user)
-    
-    # 创建活动节点
-    db.create_activity_node(activity)
-    
-    # 创建用户参与活动的关系，并添加评分和评论
-    db.create_participation_relationship(user, activity, rating, comments)
-
-     # 创建用户对活动的兴趣关系
-    db.create_interested_in_relationship(user, activity, interest_level)
-    
-    # 创建用户作为活动主办方的关系
-    db.create_organizes_relationship(user, activity, organization_role_org)
-    
-    # 创建用户作为活动工作人员的关系
-    db.create_acted_in_relationship(user, activity, organization_role_act)
-    
     db.close()
+    print("Activity node and relationship properties updated successfully.")
