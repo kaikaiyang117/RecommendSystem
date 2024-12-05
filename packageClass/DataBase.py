@@ -269,6 +269,19 @@ class Neo4jDatabase:
         result = tx.run(query, value=value)
         return [record["n"] for record in result]
 
+    def clear_all_data(self):
+        """清空数据库中的所有节点和关系"""
+        with self.driver.session() as session:
+            session.write_transaction(self._clear_all_data)
+
+    @staticmethod
+    def _clear_all_data(tx):
+        """删除所有节点和关系"""
+        query = """
+            MATCH (n)
+            DETACH DELETE n
+        """
+        tx.run(query)
 
 if __name__ == "__main__":
     db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="kkykkykky")
@@ -287,5 +300,5 @@ if __name__ == "__main__":
     activities_by_title = db.read_nodes_by_property(node_type="Activity", property_name="title",
                                                     value="Test update")
     # print("Activities found by title:", activities_by_title)
-
+    db.clear_all_data()
     db.close()

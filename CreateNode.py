@@ -1,12 +1,16 @@
-from ..packageClass.Activity import Neo4jDatabase
-from ..packageClass.Activity import User
-from ..packageClass.Activity import Activity
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../packageClass")))
+sys.path.append('/home/kky/RecommendSystem/packageClass')
+from packageClass.Activity import Activity
+from packageClass.DataBase import Neo4jDatabase
+from packageClass.User import User
+from packageClass.Activity import Activity
 from datetime import datetime
 
-
-# 示例用法
 if __name__ == "__main__":
-    # 创建User对象
+
     user = User(
         user_id="12345",
         name="Alice",
