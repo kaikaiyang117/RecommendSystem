@@ -1,0 +1,7 @@
+user_id,name,email,major,college,tags,participation_count,joined_activities,created_at,updated_at
+1,Alice,alice@example.com,Computer Science,Engineering,"AI, Robotics",3,""AI Workshop,Environmental Awareness Talk,Annual Coding Competition","2024-12-02","2024-12-02"
+2,Bob,bob@example.com,Electrical Engineering,Engineering,"Technology, Innovation",2,"AI Workshop,Annual Coding Competition","2024-12-03","2024-12-03"
+3,Charlie,charlie@example.com,Mechanical Engineering,Engineering,"Robotics, Coding",3,"Environmental Awareness Talk,AI Workshop,Annual Coding Competition","2024-12-04","2024-12-04"
+4,David,david@example.com,Software Engineering,Engineering,"AI, Coding",2,"Annual Coding Competition,AI Workshop","2024-12-05","2024-12-05"
+5,Eve,eve@example.com,Data Science,Science,"Technology, AI",1,"AI Workshop","2024-12-06","2024-12-06"
+6,Frank,frank@example.com,Information Technology,Engineering,"Robotics, Innovation",2,"Annual Coding Competition,Environmental Awareness Talk","2024-12-07","2024-12-07"
