@@ -5,6 +5,9 @@ from datetime import datetime
 from typing import List
 import warnings
 warnings.filterwarnings('ignore', category=DeprecationWarning)
+import json
+import csv
+
 
 class Neo4jDatabase:
     def __init__(self, uri: str, username: str, password: str):
@@ -283,22 +286,41 @@ class Neo4jDatabase:
         """
         tx.run(query)
 
+    def import_users_from_csv(self, csv_file_path: str):
+        """
+        从 CSV 批量导入 User 节点数据
+        :param csv_file_path: CSV 文件路径
+        """
+        with self.driver.session() as session:
+            session.write_transaction(self._load_csv_and_create_users, csv_file_path)
+
+    @staticmethod
+    def _load_csv_and_create_users(tx, csv_file_path: str):
+        """
+        使用 Cypher 从 CSV 文件批量导入 User 节点
+        """
+        query = f"""
+        LOAD CSV WITH HEADERS FROM 'file:///{csv_file_path}' AS row
+        WITH row
+        WHERE row.user_id IS NOT NULL  // 确保 user_id 不为空
+        MERGE (u:User {{user_id: row.user_id}})
+        SET u.name = row.name,
+            u.email = row.email,
+            u.major = row.major,
+            u.college = row.college,
+            u.tags = apoc.convert.fromJsonList(row.tags),
+            u.participation_count = toInteger(row.participation_count),
+            u.created_at = datetime(row.created_at),
+            u.updated_at = datetime(row.updated_at)
+        """
+        try:
+            tx.run(query)
+        except Exception as e:
+            print(f"批量导入失败: {e}")
+
+
 if __name__ == "__main__":
     db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="kkykkykky")
 
-    # 读取用户节点
-    
-    user_data = db.read_user_node(user_id="12345")
-    print(user_data[1]["name"])
-
-
-    # 读取活动节点
-    activity_data = db.read_activity_node(activity_id="AI Work")
-    # print("Activity Data:", activity_data)
-
-    # 根据活动标题读取活动节点
-    activities_by_title = db.read_nodes_by_property(node_type="Activity", property_name="title",
-                                                    value="Test update")
-    # print("Activities found by title:", activities_by_title)
-    db.clear_all_data()
+    db.import_users_from_csv("/home/kky/RecommendSystem/packageClass/Recommend_info/user_info.csv")
     db.close()

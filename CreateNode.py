@@ -45,11 +45,11 @@ if __name__ == "__main__":
     db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="kkykkykky")
 
     rating = 4  # 例如，用户给活动评分 4
-    comments = "The workshop was very insightful and informative."  # 用户的评论
+    comments = "The workshop was very insightful and informative."  
 
     interest_level = "High"  # 用户对活动的兴趣程度
     organization_role_org = "Organizer"  # 用户在活动中的角色（作为主办方）
-    organization_role_act = "Host"  # 用户在活动中的角色（作为工作人员）
+    organization_role_act = "Host"  
 
     # 创建用户节点
     db.create_user_node(user)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # 创建用户作为活动主办方的关系
     db.create_organizes_relationship(user, activity, organization_role_org)
 
-    # 创建用户作为活动工作人员的关系
+
     db.create_acted_in_relationship(user, activity, organization_role_act)
 
     db.close()

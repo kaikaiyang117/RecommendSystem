@@ -32,7 +32,6 @@ def getUserInfo(name_id:str):
     else:
         raise HTTPException(status_code=404, detail="not have result")
 
-
 # 查询activaity信息 
 # user：name return json
 
@@ -47,13 +46,18 @@ def getActivityInfo(activity_id:str):
     else:
         raise HTTPException(status_code=404, detail="not have result")
 
+
 @app.get("/recommand/{name_id}")
 def recommandAcitivity(name_id:str):    
     #TODO 完成推荐函数
 
     return 
 
-# 添加用户
+@app.get("/deleteAllDate/")
+def deleteData():
+    db.clear_all_data()
+
+    return {"statua": "success"}
 
 # 添加活动
 
