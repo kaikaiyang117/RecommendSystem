@@ -15,49 +15,112 @@ db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="kkyk
 
 app = FastAPI()
 
-@app.get("/items/")
-def read_item(user_agent: str = Header(None), session_token: str = Cookie(None)):
-    return {"User-Agent": user_agent, "Session-Token": session_token}
+@app.get("/")
+def read_root():
+    userInfoFile = "/home/kky/RecommendSystem/packageClass/Recommend_info/user_info.csv"
+    db.import_users_from_csv_alternatively(userInfoFile)
+    activityInfoUser = "/home/kky/RecommendSystem/packageClass/Recommend_info/activity_info.csv"
+    db.import_activities_from_csv(activityInfoUser)
+    db.close()
 
 
 # 查询对应user的信息 user：name return json
 @app.get("/user/{name_id}")
 def getUserInfo(name_id:str):
-    user_data = db.read_user_node(user_id=name_id)
-    # print(user_data[1]["name"])
-    if len(user_data) == 1 :
-        return user_data[0]
-    elif len(user_data) > 1:
-        raise HTTPException(status_code=404, detail="result not only")
-    else:
-        raise HTTPException(status_code=404, detail="not have result")
+    user_data = db.query_user_by_id(name_id)
+    return user_data
 
-# 查询activaity信息 
+
 # user：name return json
-
 @app.get("/activity/{activity_id}")
-def getActivityInfo(activity_id:str):
-    activity_data = db.read_activity_node(activity_id=activity_id)
-    # print(user_data[1]["name"])
-    if len(activity_data) == 1 :
-        return activity_data[0]
-    elif len(activity_data) > 1:
-        raise HTTPException(status_code=404, detail="result not only")
+def getActivityInfo(activity_id:int):
+    activity_data = db.query_activity_by_id(activity_id)
+    return activity_data       
+
+
+# @app.get("/recommand/{name_id}")
+# def recommandAcitivity(name_id:str):    
+#     #TODO 完成推荐函数
+
+#     return 
+
+@app.get("/joinOrQuit/{activity_id}{user_id}")
+def joinOrQuit():
+    Isjoin = True
+    
+    if not Isjoin:
+        status = "not join"
     else:
-        raise HTTPException(status_code=404, detail="not have result")
+        status = "Cancel join"
+    return{
+        "status": status
+    }
 
 
-@app.get("/recommand/{name_id}")
-def recommandAcitivity(name_id:str):    
-    #TODO 完成推荐函数
-
-    return 
+@app.get("/Collection/{activity_id}{user_id}")
+def joinOrQuit():
+    IsLike = True
+    
+    if not IsLike:
+        status = "Cancel Like"
+    else:
+        status = "Has Like"
+    return{
+        "status": status
+    }
 
 @app.get("/deleteAllDate/")
 def deleteData():
     db.clear_all_data()
-
     return {"statua": "success"}
+
+@app.get("/hasJoins/{user_id}")
+def read_has_join(user_id:str):
+    activityIds = [1,2,3,4,5,6,7]
+    ActivityInfos =[]
+    
+    for i in activityIds:
+        activity = db.query_activity_by_id(i)
+        ActivityInfos.append(activity)
+
+    return ActivityInfos
+
+
+@app.get("/hasLikes/{user_id}")
+def read_has_join(user_id:str):
+    activityIds = [1,2,3,4,5,6,7]
+    ActivityInfos =[]
+    
+    for i in activityIds:
+        activity = db.query_activity_by_id(i)
+        ActivityInfos.append(activity)
+
+    return ActivityInfos
+
+
+
+@app.get("/hasPublish/{user_id}")
+def read_has_join(user_id:str):
+    activityIds = [1,2,3,4,5,6,7]
+    ActivityInfos =[]
+    
+    for i in activityIds:
+        activity = db.query_activity_by_id(i)
+        ActivityInfos.append(activity)
+
+    return ActivityInfos
+
+
+@app.get("/recommand/{user_id}")
+def read_has_join(user_id:str):
+    activityIds = [1,2,3,4,5,6,7]
+    ActivityInfos =[]
+    
+    for i in activityIds:
+        activity = db.query_activity_by_id(i)
+        ActivityInfos.append(activity)
+
+    return ActivityInfos
 
 # 添加活动
 

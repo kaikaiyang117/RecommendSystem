@@ -1,17 +1,36 @@
-# Test your FastAPI endpoints
 
 GET http://127.0.0.1:8000/
 Accept: application/json
 
-###
 
-GET http://127.0.0.1:8000/user/12345
+### 查询用户信息 
+GET http://127.0.0.1:8000/user/1001
 Accept: application/json
 
-###
-GET http://127.0.0.1:8000/activity/AI Work
+### 通过id 查询活动
+GET http://127.0.0.1:8000/activity/28
 
+### 参加或退出活动接口
+GET http://127.0.0.1:8000/joinOrQuit/1001 28
+
+### 收藏或者取消收藏接口
+GET http://127.0.0.1:8000/Collection/1003 58
+
+
+### 查看参加的活动
+GET http://127.0.0.1:8000/hasJoins/50
+
+### 查看收藏的活动
+GET http://127.0.0.1:8000/hasLikes/17
+
+### 查看自己发布的活动
+GET http://127.0.0.1:8000/hasPublish/30
+
+### 推荐用户感兴趣的活动
+GET http://127.0.0.1:8000/recommand/30
 
 ### DeleteData
 GET http://127.0.0.1:8000/deleteAllDate/
 Accept: application/json
+
+

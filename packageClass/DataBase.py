@@ -77,76 +77,76 @@ class Neo4jDatabase:
                img_url=activity.img_url)
 
 
-    def create_participation_relationship(self, user: User, activity: Activity, rating: int, comments: str):
+    def create_participation_relationship(self, user: int, activity: int, rating: int, comments: str):
         """创建用户与活动之间的参与关系，并添加评分和评论"""
         with self.driver.session() as session:
             session.write_transaction(self._create_participation, user, activity, rating, comments)
 
     @staticmethod
-    def _create_participation(tx, user: User, activity: Activity, rating: int, comments: str):
+    def _create_participation(tx, user: int, activity: int, rating: int, comments: str):
         """创建用户和活动之间的参与关系并添加评分和评论"""
         query = (
             "MATCH (u:User {user_id: $user_id}), (a:Activity {activity_id: $activity_id}) "
             "CREATE (u)-[r:PARTICIPATED_IN {rating: $rating, comments: $comments}]->(a)"
         )
         tx.run(query, 
-               user_id=user.user_id, 
-               activity_id=activity.activity_id, 
+               user_id=user, 
+               activity_id=activity, 
                rating=rating, 
                comments=comments)
 
     # 创建用户对活动感兴趣的关系
-    def create_interested_in_relationship(self, user: User, activity: Activity, interest_level: str):
+    def create_interested_in_relationship(self, user: str, activity: str, interest_level: str):
         """用户对某个活动表示感兴趣"""
         with self.driver.session() as session:
             session.write_transaction(self._create_interested_in, user, activity, interest_level)
 
     @staticmethod
-    def _create_interested_in(tx, user: User, activity: Activity, interest_level: str):
+    def _create_interested_in(tx, user: str, activity: str, interest_level: str):
         """创建用户对活动感兴趣的关系"""
         query = (
             "MATCH (u:User {user_id: $user_id}), (a:Activity {activity_id: $activity_id}) "
             "CREATE (u)-[r:INTERESTED_IN {interest_level: $interest_level}]->(a)"
         )
         tx.run(query, 
-               user_id=user.user_id, 
-               activity_id=activity.activity_id, 
+               user_id=user, 
+               activity_id=activity, 
                interest_level=interest_level)
 
     # 创建用户是活动主办方的关系
-    def create_organizes_relationship(self, user: User, activity: Activity, organization_role: str):
+    def create_organizes_relationship(self, user: str, activity: str, organization_role: str):
         """用户是活动的组织者或主办方"""
         with self.driver.session() as session:
             session.write_transaction(self._create_organizes, user, activity, organization_role)
 
     @staticmethod
-    def _create_organizes(tx, user: User, activity: Activity, organization_role: str):
+    def _create_organizes(tx, user: str, activity: str, organization_role: str):
         """创建用户是活动组织者的关系"""
         query = (
             "MATCH (u:User {user_id: $user_id}), (a:Activity {activity_id: $activity_id}) "
             "CREATE (u)-[r:ORGANIZES {organization_role: $organization_role}]->(a)"
         )
         tx.run(query, 
-               user_id=user.user_id, 
-               activity_id=activity.activity_id, 
+               user_id=user, 
+               activity_id=activity, 
                organization_role=organization_role)
 
     # 创建用户是活动工作人员的关系
-    def create_acted_in_relationship(self, user: User, activity: Activity, organization_role: str):
+    def create_acted_in_relationship(self, user: str, activity: str, organization_role: str):
         """用户是活动的工作人员"""
         with self.driver.session() as session:
             session.write_transaction(self._create_acted_in, user, activity, organization_role)
 
     @staticmethod
-    def _create_acted_in(tx, user: User, activity: Activity, organization_role: str):
+    def _create_acted_in(tx, user: str, activity: str, organization_role: str):
         """创建用户是活动工作人员的关系"""
         query = (
             "MATCH (u:User {user_id: $user_id}), (a:Activity {activity_id: $activity_id}) "
             "CREATE (u)-[r:ACTED_IN {organization_role: $organization_role}]->(a)"
         )
         tx.run(query, 
-               user_id=user.user_id, 
-               activity_id=activity.activity_id, 
+               user_id=user, 
+               activity_id=activity, 
                organization_role=organization_role)
 
     # 更新User节点的属性
@@ -221,39 +221,34 @@ class Neo4jDatabase:
         params = {"user_id": user_id, "activity_id": activity_id, **updated_property}
         tx.run(query, **params)
 
-# 读取用户节点的属性
-    def read_user_node(self, user_id: str):
-        """根据user_id读取用户节点的属性"""
-        with self.driver.session() as session:
-            result = session.read_transaction(self._read_user, user_id)
-            return result
-
-    @staticmethod
-    def _read_user(tx, user_id: str):
-        """查询用户节点的属性"""
+    def query_user_by_id(self, user_id):
         query = """
-            MATCH (u:User {user_id: $user_id})
-            RETURN u
+        MATCH (u:User {user_id: $user_id})
+        RETURN u
         """
-        result = tx.run(query, user_id=user_id)
-        return [record["u"] for record in result]
-
-    # 读取活动节点的属性
-    def read_activity_node(self, activity_id: str):
-        """根据activity_id读取活动节点的属性"""
         with self.driver.session() as session:
-            result = session.read_transaction(self._read_activity, activity_id)
-            return result
+            result = session.run(query, user_id=user_id)
+            user = result.single()
+            if user:
+                user_dict = dict(user["u"].items())
+                return user_dict
+            else:
+                return None  
 
-    @staticmethod
-    def _read_activity(tx, activity_id: str):
-        """查询活动节点的属性"""
+    def query_activity_by_id(self, activity_id):
+        # 根据 activity_id 查询活动信息
         query = """
-            MATCH (a:Activity {activity_id: $activity_id})
-            RETURN a
+        MATCH (a:Activity {activity_id: $activity_id})
+        RETURN a
         """
-        result = tx.run(query, activity_id=activity_id)
-        return [record["a"] for record in result]
+        with self.driver.session() as session:
+            result = session.run(query, activity_id=activity_id)
+            activity = result.single()
+            if activity:
+                activity_dict = dict(activity["a"].items())
+                return activity_dict
+            else:
+                return None 
 
     # 通过属性读取节点
     def read_nodes_by_property(self, node_type: str, property_name: str, value: str):
@@ -286,41 +281,102 @@ class Neo4jDatabase:
         """
         tx.run(query)
 
-    def import_users_from_csv(self, csv_file_path: str):
-        """
-        从 CSV 批量导入 User 节点数据
-        :param csv_file_path: CSV 文件路径
-        """
+    def import_activities_from_csv(self, csv_file_path):
         with self.driver.session() as session:
-            session.write_transaction(self._load_csv_and_create_users, csv_file_path)
+            session.write_transaction(self._load_csv_and_create_activities, csv_file_path)
+
+    def _load_csv_and_create_activities(self, tx, csv_file_path):
+        with open(csv_file_path, 'r', encoding='utf-8') as file:
+            csv_reader = csv.DictReader(file)
+            for row in csv_reader:
+                activity_id = row['activity_id']
+                title = row['title']
+                description = row['description']
+                sponsor = row['sponsor']
+                tags = row['tags']
+                date = row['date']
+                location = row['location']
+                duration = row['duration']
+                audience = row['audience']
+                capacity = row['capacity']
+                current_participants = row['current_participants']
+                organizer = row['organizer']
+                img_url = row['img_url']
+                
+                query = (
+                    f"CREATE (a:Activity {{activity_id: {activity_id}, title: '{title}', description: '{description}', "
+                    f"sponsor: '{sponsor}', tags: {tags}, date: datetime('{date}'), location: '{location}', "
+                    f"duration: {duration}, audience: '{audience}', capacity: {capacity}, "
+                    f"current_participants: {current_participants}, organizer: '{organizer}', img_url: '{img_url}'}})"
+                )
+                try:
+                    tx.run(query)
+                except Exception as e:
+                    print(f"Failed to insert activity {activity_id}: {e}")
+
+    def import_users_from_csv_alternatively(self, csv_file_path):
+        """逐行读取 CSV 并导入用户节点"""
+        with self.driver.session() as session:
+            with open(csv_file_path, 'r') as file:
+                csv_reader = csv.DictReader(file)
+                for row in csv_reader:
+                    session.write_transaction(self._create_user_node, row)
 
     @staticmethod
-    def _load_csv_and_create_users(tx, csv_file_path: str):
+    def _create_user_node(tx, row):
+        """插入单个用户节点"""
+        query = """
+        MERGE (u:User {user_id: $user_id})
+        SET u.name = $name,
+            u.email = $email,
+            u.major = $major,
+            u.college = $college,
+            u.tags = split($tags, ','),
+            u.participation_count = toInteger($participation_count),
+            u.created_at = datetime($created_at),
+            u.updated_at = datetime($updated_at)
         """
-        使用 Cypher 从 CSV 文件批量导入 User 节点
-        """
+        tx.run(query, **row)
+
+    def create_relationship(self, user_id, activity_id, relationship_type, properties):
+        # 构建查询语句
         query = f"""
-        LOAD CSV WITH HEADERS FROM 'file:///{csv_file_path}' AS row
-        WITH row
-        WHERE row.user_id IS NOT NULL  // 确保 user_id 不为空
-        MERGE (u:User {{user_id: row.user_id}})
-        SET u.name = row.name,
-            u.email = row.email,
-            u.major = row.major,
-            u.college = row.college,
-            u.tags = apoc.convert.fromJsonList(row.tags),
-            u.participation_count = toInteger(row.participation_count),
-            u.created_at = datetime(row.created_at),
-            u.updated_at = datetime(row.updated_at)
+        MATCH (u:User {{user_id: "{user_id}"}}), (a:Activity {{activity_id: {activity_id}}})
+        MERGE (u)-[r:{relationship_type}]->(a)
+        SET r += {{ {', '.join([f'{key}: "{value}"' for key, value in properties.items()])} }}
         """
-        try:
-            tx.run(query)
-        except Exception as e:
-            print(f"批量导入失败: {e}")
+        
+        # 执行查询
+        with self._driver.session() as session:
+            session.run(query)
+
+    def batch_insert_relationships_from_csv(self, csv_file_path):
+        with open(csv_file_path, mode='r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                # 获取 CSV 行中的数据
+                user_id = row['user_id']
+                activity_id = row['activity_id']
+                
+                # 创建 PARTICIPATED_IN 关系
+                rating = row['rating']
+                comments = row['comments']
+                self.create_relationship(user_id, activity_id, 'PARTICIPATED_IN', {'rating': rating, 'comments': comments})
+                
+                # 创建 INTERESTED_IN 关系
+                interest_level = row['interest_level']
+                self.create_relationship(user_id, activity_id, 'INTERESTED_IN', {'interest_level': interest_level})
+                
+                # 创建 ORGANIZES 关系
+                organization_role = row['organization_role']
+                self.create_relationship(user_id, activity_id, 'ORGANIZES', {'role': organization_role})
 
 
 if __name__ == "__main__":
     db = Neo4jDatabase(uri="bolt://localhost:7687", username="neo4j", password="kkykkykky")
 
-    db.import_users_from_csv("/home/kky/RecommendSystem/packageClass/Recommend_info/user_info.csv")
+    db.import_users_from_csv_alternatively("/home/kky/RecommendSystem/packageClass/Recommend_info/user_info.csv")
+
+    CSV_FILE = "/home/kky/RecommendSystem/packageClass/Recommend_info/activity_info.csv"
+    db.import_activities_from_csv(CSV_FILE)
     db.close()

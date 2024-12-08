@@ -52,21 +52,21 @@ if __name__ == "__main__":
     organization_role_act = "Host"  
 
     # 创建用户节点
-    db.create_user_node(user)
+    # db.create_user_node(user)
 
     # 创建活动节点
-    db.create_activity_node(activity)
+    # db.create_activity_node(activity)
 
     # 创建用户参与活动的关系，并添加评分和评论
-    db.create_participation_relationship(user, activity, rating, comments)
+    db.create_participation_relationship(1000, 24, rating, comments)
 
-    # 创建用户对活动的兴趣关系
-    db.create_interested_in_relationship(user, activity, interest_level)
+    # # 创建用户对活动的兴趣关系
+    # db.create_interested_in_relationship(user, activity, interest_level)
 
-    # 创建用户作为活动主办方的关系
-    db.create_organizes_relationship(user, activity, organization_role_org)
+    # # 创建用户作为活动主办方的关系
+    # db.create_organizes_relationship(user, activity, organization_role_org)
 
 
-    db.create_acted_in_relationship(user, activity, organization_role_act)
+    # db.create_acted_in_relationship(user, activity, organization_role_act)
 
     db.close()
